@@ -1,0 +1,101 @@
+/* Companion source code for "flex & bison", published by O'Reilly
+ * Media, ISBN 978-0-596-15597-1
+ * Copyright (c) 2009, Taughannock Networks. All rights reserved.
+ * See the README file for license conditions and contact info.
+ * $Header: /home/johnl/flnb/code/RCS/fb3-2.y,v 2.1 2009/11/08 02:53:18 johnl Exp $
+ */
+/* calculator with AST */
+
+%{
+#  include <stdio.h>
+#  include <stdlib.h>
+#  include "calc.h"
+%}
+
+%union {
+  ast *a;
+  double d;
+  symbol *s;		/* which symbol */
+  symlist *sl;
+  bifs fn;			/* which function */
+  int cmp;          /* which comparison */
+}
+
+/* declare tokens */
+%token <d> NUMBER
+%token <s> NAME
+%token <fn> FUNC
+%token EOL
+
+%token IF THEN ELSE WHILE DO LET
+
+
+%nonassoc <cmp> CMP
+%right '='
+%left '+' '-'
+%left '*' '/'
+%nonassoc '|' UMINUS
+
+%type <a> exp stmt list explist
+%type <sl> symlist
+
+%start calclist
+
+%code {
+    int yylex(void);
+    void yyerror(const char *s,...);
+}
+
+
+
+%%
+
+stmt: IF exp THEN list           { $$ = new flow('I', $2, $4, NULL); }
+   | IF exp THEN list ELSE list  { $$ = new flow('I', $2, $4, $6); }
+   | WHILE exp DO list           { $$ = new flow('W', $2, $4, NULL); }
+   | exp
+;
+
+list: /* nothing */ { $$ = NULL; }
+   | stmt ';' list { if ($3 == NULL)
+	                $$ = $1;
+                      else
+			$$ = new binop('L', $1, $3);
+                    }
+   ;
+
+exp: exp CMP exp          { $$ = new binop($2, $1, $3); }
+   | exp '+' exp          { $$ = new binop('+', $1,$3); }
+   | exp '-' exp          { $$ = new binop('-', $1,$3);}
+   | exp '*' exp          { $$ = new binop('*', $1,$3); }
+   | exp '/' exp          { $$ = new binop('/', $1,$3); }
+   | '|' exp              { $$ = new unop('|', $2); }
+   | '(' exp ')'          { $$ = $2; }
+   | '-' exp %prec UMINUS { $$ = new unop('M', $2); }
+   | NUMBER               { $$ = new numval($1); }
+   | FUNC '(' explist ')' { $$ = new fncall($1, $3); }
+   | NAME                 { $$ = new symref($1); }
+   | NAME '=' exp         { $$ = new symasgn($1, $3); }
+   | NAME '(' explist ')' { $$ = new ufncall($1, $3); }
+;
+
+explist: exp
+ | exp ',' explist  { $$ = new binop('L', $1, $3); }
+;
+symlist: NAME       { $$ = new symlist($1, NULL); }
+ | NAME ',' symlist { $$ = new symlist($1, $3); }
+;
+
+calclist: /* nothing */
+  | calclist stmt EOL {
+    $2->print(0);
+     printf("= %4.4g\n> ", $2->eval());
+     delete $2;
+    }
+  | calclist LET NAME '(' symlist ')' '=' list EOL {
+                       dodef($3, $5, $8);
+                       printf("Defined %s\n> ", $3->name.c_str()); }
+
+  | calclist error EOL { yyerrok; printf("> "); }
+ ;
+%%
