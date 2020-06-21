@@ -11,5 +11,5 @@ SOURCES += \
 
 HEADERS = calc.h
 
-DISTFILES = lexer.l parser.ypp
+DISTFILES = lexer.l parser.ypp Makefile.orig
 

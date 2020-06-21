@@ -1,0 +1,17 @@
+CC = g++
+
+calc: calc.o main.o parser.o lexer.o
+
+main.o:main.cpp parser.hpp
+
+calc.o:calc.cpp
+
+parser.cpp parser.hpp:parser.ypp
+	bison -o parser.cpp -d parser.ypp
+	
+parser.o:parser.cpp
+
+lexer.cpp:lexer.l parser.hpp
+	flex -o lexer.cpp lexer.l
+	
+lexer.o:lexer.cpp
