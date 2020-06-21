@@ -6,7 +6,7 @@
  */
 /* recognize tokens for the calculator */
 
-%option noyywrap nodefault yylineno
+%option noyywrap nodefault yylineno nounput
 %{
 # include "calc.h"
 # include "parser.hpp"
