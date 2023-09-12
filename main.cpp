@@ -3,6 +3,12 @@
 #include <cstdio>
 #include <cstdlib>
 #include <new>
+extern "C" {
+  int yylex();
+}
+
+int yyparse(void);
+
 
 void no_memory(void)
 {

@@ -1,3 +1,5 @@
+.PHONY: clean cleanall
+
 CC = g++
 
 calc: calc.o main.o parser.o lexer.o
@@ -15,3 +17,9 @@ lexer.cpp:lexer.l parser.hpp
 	flex -o lexer.cpp lexer.l
 	
 lexer.o:lexer.cpp
+
+clean:
+	rm -f *.o *.obj
+
+cleanall: clean
+	rm -f parser.cpp parser.hpp lexer.cpp lexer.hpp calc calc.exe
